@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysLogDao">
+   <insert id="insertObject">
+       insert into sys_logs
+       (username,operation,method,params,time,ip,createdTime)
+       values
+       (#{username},#{operation},#{method},#{params},#{time},#{ip},#{createdTime})
+   </insert>
+   <!-- sql元素一般用于定义sql语句的共性 -->
+   <sql id="queryWhereId">
+      <where>
+       <if test="username!=null and username!=''">
+        username like concat("%",#{username},"%")
+       </if>
+      </where>
+   </sql>
+   <!-- 统计记录总数 -->
+   <select id="getRowCount" resultType="int">
+      select count(*) 
+      from sys_logs
+      <include refid="queryWhereId"/>
+   </select>
+   <!-- 查询当前页数据-->
+   <select id="findPageObjects"
+           resultType="com.cy.pj.sys.entity.SysLog">
+      select *
+      from sys_logs
+      <include refid="queryWhereId"/>
+      order by createdTime desc
+      limit #{startIndex},#{pageSize}     
+   </select>
+   
+   <!-- 基于多个id执行日志删除操作 -->
+   <delete id="deleteObjects">
+       delete from sys_logs
+       where id in <!-- (1,2,3,4,5) -->
+       <foreach collection="ids"
+                open="("
+                close=")"
+                separator=","
+                item="id">
+               #{id}
+       </foreach>
+   </delete>
+</mapper>

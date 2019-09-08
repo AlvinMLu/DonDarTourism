@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysRoleDao">
+   <cache readOnly="false"/>
+   <update id="updateObject">
+      update sys_roles
+      set name=#{name},
+          note=#{note},
+          modifiedUser=#{modifiedUser},
+          modifiedTime=now()
+      where id=#{id}
+   </update>
+   <!-- 自定义结果映射 -->
+   <resultMap type="com.cy.pj.sys.vo.SysRoleMenuVo"
+              id="sysRoleMenuVo">
+          <!-- one2many
+                             基于角色id获取角色对应的菜单信息,并封装到SysRoleMenuVo
+                             对象的menuIds属性上.-->
+          <collection property="menuIds"
+                      column="id"
+                      select="com.cy.pj.sys.dao.SysRoleMenuDao.findMenuIdsByRoleId">
+          </collection> 
+          <!-- 问题:映射文件中有元素id,此时在dao中一定要有对应方法吗?不一定 -->
+   </resultMap>
+   <!-- 何时使用resultMap?(自己定义映射规则或关联查询映射) -->
+   <select id="findObjectById"
+           resultMap="sysRoleMenuVo">
+        select id,name,note
+        from sys_roles
+        where id=#{id}        
+   </select>
+   
+   <!-- 向表中写入数据
+    1)useGeneratedKeys 表示获取写入到数据库的主键值
+    2)keyProperty表示将获取的主键值赋值给参数对象的哪个数据
+    -->
+   <insert id="insertObject"
+           parameterType="com.cy.pj.sys.entity.SysRole"
+           useGeneratedKeys="true"
+           keyProperty="id">
+      insert into sys_roles
+      (name,note,createdTime,modifiedTime,createdUser,modifiedUser)
+      values
+      (#{name},#{note},now(),now(),#{createdUser},#{modifiedUser})
+   </insert>
+   
+   <!-- sql元素一般用于定义sql语句的共性 -->
+   <sql id="queryWhereId">
+      from sys_roles
+      <where>
+       <if test="name!=null and name!=''">
+        name like concat("%",#{name},"%")
+       </if>
+      </where>
+   </sql>
+   <!-- 统计记录总数 -->
+   <select id="getRowCount" resultType="int">
+      select count(*) 
+      <include refid="queryWhereId"/>
+   </select>
+   <!-- 查询当前页数据-->
+   <select id="findPageObjects"
+           resultType="com.cy.pj.sys.entity.SysRole">
+      select *
+      <include refid="queryWhereId"/>
+      order by createdTime desc
+      limit #{startIndex},#{pageSize}     
+   </select>
+   
+  
+</mapper>

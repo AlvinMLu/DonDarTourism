@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysUserDao">
+	<update id="updateObject"
+		parameterType="com.cy.pj.sys.entity.SysUser">
+		update sys_users
+		<set>
+			<if test="username!=null and username!=''">
+				username=#{username},
+			</if>
+			<if test="email!=null and email!=''">
+				email=#{email},
+			</if>
+			<if test="mobile!=null and mobile!=''">
+				mobile=#{mobile},
+			</if>
+			<if test="deptId!=null and deptId!=''">
+				deptId=#{deptId},
+			</if>
+
+			<if test="modifiedUser!=null and modifiedUser!=''">
+				modifiedUser=#{modifiedUser},
+			</if>
+			modifiedTime=now()
+		</set>
+		where id=#{id}
+	</update>
+   
+   <select id="findObjectById"
+           parameterType="int"
+           resultMap="sysUserDeptVo">
+           select * 
+           from sys_users   
+           where id=#{id}     
+   </select>
+    
+    <insert id="insertObject"
+           parameterType="com.cy.pj.sys.entity.SysUser">
+      <!-- 说明,selectKey一般用户获取id主键值 -->
+      <selectKey keyProperty="id"
+                 resultType="int"
+                 order="AFTER"><!-- order表示在insert之前还是之后 -->
+            <!-- 获取自增最后的id值(假如id不是自增,则如下函数无效) -->
+            select last_insert_id()
+      </selectKey>
+      insert into sys_users
+      (username,password,deptId,email,mobile,salt,valid,
+      createdTime,modifiedTime,createdUser,modifiedUser)
+      values
+      (#{username},#{password},#{deptId},#{email},#{mobile},#{salt},#{valid},
+      now(),now(),#{createdUser},#{modifiedUser})
+   </insert>
+   
+   
+   <!-- sql元素一般用于定义sql语句的共性 -->
+   <sql id="queryWhereId">
+      <where>
+       <if test="username!=null and username!=''">
+        username like concat("%",#{username},"%")
+       </if>
+      </where>
+   </sql>
+   <!-- 统计记录总数 -->
+   <select id="getRowCount" resultType="int">
+      select count(*) 
+      from sys_users
+      <include refid="queryWhereId"/>
+   </select>
+   <resultMap type="com.cy.pj.sys.vo.SysUserDeptVo" 
+              id="sysUserDeptVo">
+          <!-- one2one,many2one 
+                              基于部门id查询部门信息
+                              然后将查询结果映射到SysUserDeptVo
+                              类的sysDept属性-->
+          <association property="sysDept"
+                       column="deptId"
+                       select="com.cy.pj.sys.dao.SysDeptDao.findById">
+          </association>
+   </resultMap>
+   <!-- 查询当前页数据-->
+   <select id="findPageObjects"
+           resultMap="sysUserDeptVo">
+      select *
+      from sys_users
+      <include refid="queryWhereId"/>
+      order by createdTime desc
+      limit #{startIndex},#{pageSize}     
+   </select>
+  
+</mapper>
